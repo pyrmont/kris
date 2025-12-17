@@ -48,14 +48,20 @@
 (defn shell-capture
   "Runs a command and captures all output"
   [cmd]
-  (def proc (os/spawn cmd :p {:out :pipe :err :pipe}))
-  (def [exit-code out err]
-    (ev/gather
-      (os/proc-wait proc)
-      (ev/read (proc :out) :all)
-      (ev/read (proc :err) :all)))
-  (os/proc-close proc)
-  [exit-code out err])
+  (def [ok? result]
+    (protect
+      (do
+        (def proc (os/spawn cmd :p {:out :pipe :err :pipe}))
+        (def [exit-code out err]
+          (ev/gather
+            (os/proc-wait proc)
+            (ev/read (proc :out) :all)
+            (ev/read (proc :err) :all)))
+        (os/proc-close proc)
+        [exit-code out err])))
+  (if ok?
+    result
+    [1 @"" (string "failed to spawn process: " result)]))
 
 (defmacro in-dir
   ```
