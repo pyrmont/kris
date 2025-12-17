@@ -23,11 +23,12 @@
 (def file-env (curenv))
 
 (defn run
-  [args]
-  (def err (args :err))
-  (def help (args :help))
-  (def opts (args :opts))
-  (def sub (args :sub))
+  []
+  (def parsed (argy/parse-args "kris" config))
+  (def err (parsed :err))
+  (def help (parsed :help))
+  (def opts (parsed :opts))
+  (def sub (parsed :sub))
   (cond
     (not (empty? help))
     (do
@@ -52,4 +53,4 @@
          (debug/stacktrace f)
          (os/exit 1))))))
 
-(defn main [& args] (run (argy/parse-args "kris" config)))
+(defn main [& args] (run))
