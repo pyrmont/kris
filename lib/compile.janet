@@ -1,5 +1,7 @@
 (import ./util)
 
+(defdyn *kris-cache-dir*)
+
 (def native-target
   (do
 		(def os-type (os/which))
@@ -43,6 +45,8 @@
   Uses XDG_CACHE_HOME if set, otherwise defaults to ~/.cache/kris
   ```
   []
+  (when (dyn :kris-cache-dir)
+    (break (dyn :kris-cache-dir)))
   (def xdg-cache (os/getenv "XDG_CACHE_HOME"))
   (def home (os/getenv "HOME"))
   (def base-dir (or xdg-cache (string/join [home ".cache"] util/sep)))

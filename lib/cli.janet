@@ -10,7 +10,12 @@
   ```
   The configuration for kris
   ```
-  {:subs ["clean" cmd/clean/config
+  {:rules ["--cache"  {:kind  :single
+                       :short "c"
+                       :proxy "path"
+                       :hide? true
+                       :help  "The path to the cache directory."}]
+   :subs ["clean" cmd/clean/config
           "janet" cmd/janet/config
           "quickbin" cmd/quickbin/config]
    :info {:about "A tool for cross-compiling Janet projects for multiple platforms using Zig."}})
@@ -18,12 +23,11 @@
 (def file-env (curenv))
 
 (defn run
-  []
-  (def parsed (argy/parse-args "kris" config))
-  (def err (parsed :err))
-  (def help (parsed :help))
-  (def opts (parsed :opts))
-  (def sub (parsed :sub))
+  [args]
+  (def err (args :err))
+  (def help (args :help))
+  (def opts (args :opts))
+  (def sub (args :sub))
   (cond
     (not (empty? help))
     (do
@@ -38,6 +42,7 @@
       (unless (util/zig-installed?)
         (eprintf "kris: zig not found on PATH")
         (os/exit 1))
+      (setdyn :kris-cache-dir (opts "cache"))
       (def name (symbol "cmd/" (sub :cmd) "/run"))
       (def sub/run (module/value file-env name true))
       (try
@@ -47,4 +52,4 @@
          (debug/stacktrace f)
          (os/exit 1))))))
 
-(defn main [& args] (run))
+(defn main [& args] (run (argy/parse-args "kris" config)))

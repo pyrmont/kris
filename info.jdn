@@ -10,6 +10,12 @@
              :url "https://github.com/pyrmont/argy-bargy"
              :prefix "deps/argy-bargy"
              :paths ["argy-bargy.janet"
+                     "LICENSE"]}
+            {:name "testament"
+             :url "https://github.com/pyrmont/testament"
+             :prefix "deps/testament"
+             :paths ["lib/testament.janet"
+                     "init.janet"
                      "LICENSE"]}]
  :artifacts {:libraries [{:prefix "kris"
                           :paths ["deps"
