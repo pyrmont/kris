@@ -60,7 +60,10 @@ $ janet --install .
 
 ## Using
 
-Run `kris --help` for usage information.
+Run `kris --help` for usage information. The command-line arguments are
+explained in more detail in the [man page][].
+
+[man page]: https://github.com/pyrmont/kris/blob/master/man/man1/kris.1.predoc
 
 ### Cross-Compiling Janet
 

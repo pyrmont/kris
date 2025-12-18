@@ -20,5 +20,5 @@
  :artifacts {:libraries [{:prefix "kris"
                           :paths ["deps"
                                   "lib"]}]
-             # :manpages ["man/man1/kris.1"]
+             :manpages ["man/man1/kris.1"]
              :scripts [{:path "bin/kris"}]}}

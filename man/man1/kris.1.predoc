@@ -1,0 +1,130 @@
+---
+Title: KRIS(1)
+Authors: Michael Camilleri <mike@inqk.net>
+Date: 2025/12/19
+Project: Kris
+Version: DEVEL
+---
+
+NAME
+====
+
+**kris** - cross-compile Janet projects for multiple platforms using Zig
+
+SYNOPSIS
+========
+
+**kris** ***clean***
+
+**kris** ***janet*** [**-o** _path_ | **--output** _path_] [**-s** |
+         **--small**] [**-t** _target_ | **--target** _target_] [**-v**
+         _version_ | **--version** _version_]
+
+**kris** ***quickbin*** [**-s** | **--small**] [**-t** _target_ |
+         **--target** _target_] [**-v** _version_ | **--version**
+         _version_] _script_ _exe_
+
+DESCRIPTION
+===========
+
+**kris** is a command-line tool for cross-compiling Janet projects to native
+executables for multiple platforms using Zig. It exposes its functionality via
+three commands:
+
+- ***c***, ***clean***: deletes the cache directory
+- ***j***, ***janet***: cross-compiles Janet
+- ***q***, ***quickbin***: cross-compiles a standalone executable
+
+There is no default command.
+
+**kris** depends upon `make(1)` and `zig(1)` for compilation and
+cross-compilation. They must be on the `PATH` of the user that runs **kris**.
+
+**kris** caches Janet source code and build artifacts to speed up subsequent
+compilations. The cache is stored in `$XDG_CACHE_HOME/kris` (falls back to
+`~/.cache/kris` if `$XDG_CACHE_HOME` is not set).
+
+Options
+-------
+
+For **kris** ***janet***, the following options are available:
+
+- **-o** _path_ | **--output** _path_:
+  The output path for the compiled binary. This defaults to ``janet``.
+
+- **-s** | **--small**:
+  Optimise for smallest binary size.
+
+- **-t** _target_ | **--target** _target_:
+  The target platform. Valid targets are: ``linux-arm64``, ``linux-x64``,
+  ``macos-arm64``, ``macos-x64``, ``native``, ``windows-arm64`` and
+  ``windows-x64``. This defaults to ``native`` (your current platform).
+
+- **-v** _version_ | **--version** _version_:
+  The Janet version to build. This defaults to ``latest`` (the most recent
+  release from the Janet repository).
+
+For **kris** ***quickbin***, the following options are available:
+
+- **-s** | **--small**:
+  Optimise for smallest binary size.
+
+- **-t** _target_ | **--target** _target_:
+  The target platform. Valid targets are: ``linux-arm64``, ``linux-x64``,
+  ``macos-arm64``, ``macos-x64``, ``native``, ``windows-arm64`` and
+  ``windows-x64``. This defaults to ``native`` (your current platform).
+
+- **-v** _version_ | **--version** _version_:
+  The Janet version to use for the runtime. This defaults to ``latest`` (the
+  most recent release from the Janet repository).
+
+EXIT STATUS
+===========
+
+**kris** exits ``0`` if exiting without error. Otherwise the exit status will
+be ``1``.
+
+FILES
+=====
+
+- `$XDG_CACHE_HOME/kris`:
+  Cache directory for Janet source code and build artifacts. If
+  `$XDG_CACHE_HOME` is not set, defaults to `~/.cache/kris`.
+
+EXAMPLES
+========
+
+Cross-compile Janet for Linux x86-64:
+
+````
+$ kris janet --target linux-x64
+````
+
+Cross-compile Janet version 1.40.1 for macOS ARM64 with optimised size:
+
+````
+$ kris janet --target macos-arm64 --version 1.40.1 --small
+````
+
+Create a standalone executable from a Janet script for your current platform:
+
+````
+$ kris quickbin script.janet my-app
+````
+
+Create a standalone executable for Windows x86-64:
+
+````
+$ kris quickbin --target windows-x64 script.janet my-app.exe
+````
+
+Clean the cache directory:
+
+````
+$ kris clean
+````
+
+BUGS
+====
+
+Report issues at <https://github.com/pyrmont/kris>.
