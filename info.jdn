@@ -1,5 +1,5 @@
 {:name "kris"
- :version "DEVEL"
+ :version "0.1.0"
  :description "Cross-compile Janet for multiple platforms using Zig"
  :author "Michael Camilleri"
  :license "MIT"
