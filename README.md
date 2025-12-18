@@ -1,5 +1,7 @@
 # Kris
 
+[![Test Status](https://github.com/pyrmont/kris/workflows/test/badge.svg)](https://github.com/pyrmont/kris/actions?query=workflow%3Atest)
+
 Kris is a tool for cross-compiling Janet projects for multiple platforms using
 Zig.
 
@@ -80,7 +82,7 @@ Supported targets:
 By default, kris uses the latest release from the Janet repository. You can
 specify a specific version with `--version`.
 
-To optimize for smallest binary size, use the `--small` flag:
+To optimize for the smallest binary size, use the `--small` flag:
 
 ```shell
 $ kris janet --small
@@ -103,8 +105,8 @@ You can target different platforms:
 $ kris quickbin --target linux-x64 script.janet output
 ```
 
-As with the `janet` subcommand, you can optimize for smallest binary size, use
-the `--small` flag:
+As with the `janet` subcommand, you can optimize for the smallest binary size,
+use the `--small` flag:
 
 ```shell
 $ kris quickbin --small script.janet output
