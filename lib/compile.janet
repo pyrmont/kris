@@ -2,16 +2,20 @@
 
 (defdyn *kris-cache-dir*)
 
+(def is-win? (= util/wsep util/sep))
+
 (def native-target
   (do
-		(def os-type (os/which))
-		(def arch (os/arch))
-		(cond
-			(and (= os-type :macos) (= arch :aarch64)) "macos-arm64"
-			(and (= os-type :macos) (= arch :x64)) "macos-x64"
-			(and (= os-type :linux) (= arch :aarch64)) "linux-arm64"
-			(and (= os-type :linux) (= arch :x64)) "linux-x64"
-			(errorf "unsupported native platform %s/%s" os-type arch))))
+    (def os-type (os/which))
+    (def arch (os/arch))
+    (cond
+      (and (= os-type :macos) (= arch :aarch64)) "macos-arm64"
+      (and (= os-type :macos) (= arch :x64)) "macos-x64"
+      (and (= os-type :linux) (= arch :aarch64)) "linux-arm64"
+      (and (= os-type :linux) (= arch :x64)) "linux-x64"
+      (and is-win? (= arch :aarch64)) "windows-arm64"
+      (and is-win? (= arch :x64)) "windows-x64"
+      (errorf "unsupported native platform %s/%s" os-type arch))))
 
 (def target-map
   ```
@@ -30,13 +34,21 @@
 (def linker-flags
   ```
   Platform-specific linker flags for linking executables
+
+  Based on Janet's Makefile, different platforms need different libraries:
+  - Linux: -lm -lpthread -lrt -ldl
+  - macOS: -lm -lpthread -ldl
+  - Windows (MinGW): -lws2_32 -lpsapi -lwsock32
   ```
-  {"linux-x64"     ["-lrt" "-ldl"]
-   "linux-arm64"   ["-lrt" "-ldl"]
-   "macos-x64"     ["-ldl"]
-   "macos-arm64"   ["-ldl"]
-   "windows-x64"   ["-lws2_32" "-lpsapi" "-lwsock32"]
-   "windows-arm64" ["-lws2_32" "-lpsapi" "-lwsock32"]})
+  (do
+    (def flags
+      {"linux-x64"     ["-lm" "-lpthread" "-lrt" "-ldl"]
+       "linux-arm64"   ["-lm" "-lpthread" "-lrt" "-ldl"]
+       "macos-x64"     ["-lm" "-lpthread" "-ldl"]
+       "macos-arm64"   ["-lm" "-lpthread" "-ldl"]
+       "windows-x64"   ["-lws2_32" "-lpsapi" "-lwsock32"]
+       "windows-arm64" ["-lws2_32" "-lpsapi" "-lwsock32"]})
+    (merge flags {"native" (flags native-target)})))
 
 (defn get-cache-dir
   ```
@@ -103,7 +115,6 @@
   Fetches all tags and returns the highest version tag (starting with 'v').
   ```
   [source-dir]
-  # Fetch all tags
   (def fetch-cmd ["git" "-C" source-dir "fetch" "--tags" "origin"])
   (def fetch-exit (os/execute fetch-cmd :p))
   (assert (zero? fetch-exit) "failed to fetch tags")
@@ -121,7 +132,6 @@
   (def sorted-tags
     (-> (map (fn [v] (map scan-number (string/split "." v))) version-tags)
         (sorted compare-versions)))
-  # Return version without 'v' prefix
   (-> (map string (last sorted-tags)) (string/join ".")))
 
 (defn download-janet
@@ -133,7 +143,7 @@
   ```
   [version]
   (def source-dir (get-source-dir))
-  # Clone if directory doesn't exist
+  # clone if directory doesn't exist
   (unless (= :directory (os/stat source-dir :mode))
     (print "cloning Janet repository...")
     (def parent-dir (string/join [(get-cache-dir) "sources"] util/sep))
@@ -141,7 +151,7 @@
     (def clone-cmd ["git" "clone" "https://github.com/janet-lang/janet.git" source-dir])
     (def exit-code (os/execute clone-cmd :p))
     (assert (zero? exit-code) "failed to clone Janet repository"))
-  # Resolve "latest" to the actual latest version
+  # resolve "latest" to the actual latest version
   (def actual-version
     (if (= version "latest")
       (do
@@ -149,7 +159,7 @@
         (get-latest-version source-dir))
       version))
   (def tag (if (string/has-prefix? "v" actual-version) actual-version (string "v" actual-version)))
-  # Fetch and checkout the requested version
+  # fetch and checkout the requested version
   (print "checking out Janet v" actual-version "...")
   (def fetch-cmd ["git" "-C" source-dir "fetch" "origin" (string "refs/tags/" tag)])
   (def exit-code (os/execute fetch-cmd :p))
@@ -167,12 +177,12 @@
   ```
   [source-dir]
   (print "building native bootstrap compiler...")
-  # Use the Makefile's bootstrap target
-  (def make-cmd ["make" "-C" source-dir "build/janet_boot"])
+  (def janet-boot (string "janet_boot" (when is-win? ".exe")))
+  (def make-cmd ["make" "-j" "-C" source-dir (string "build/" janet-boot)])
   (def exit-code (os/execute make-cmd :p))
   (assert (zero? exit-code) "failed to build native bootstrap")
   (print "built native bootstrap")
-  (string/join [source-dir "build" "janet_boot"] util/sep))
+  (string/join [source-dir "build" janet-boot] util/sep))
 
 (defn generate-amalgamation
   ```
@@ -182,19 +192,19 @@
   ```
   [source-dir bootstrap-path]
   (print "generating amalgamation...")
-  # Create build/c directory
   (def build-c-dir (string/join [source-dir "build" "c"] util/sep))
   (util/mkdir build-c-dir)
-  # Generate janet.c
-  # (def janet-path (os/getenv "JANET_PATH" "/usr/local/lib/janet"))
   (def janet-path (os/getenv "JANET_PATH"))
   (def janet-c-path (string/join [build-c-dir "janet.c"] util/sep))
-  (def amalg-cmd (string bootstrap-path " " source-dir
-                         (when janet-path (string " JANET_PATH '" janet-path "'"))
-                         " > " janet-c-path))
-  (def exit-code (os/execute ["sh" "-c" amalg-cmd] :p))
+  (def amalg-args
+    (if janet-path
+      [bootstrap-path source-dir "JANET_PATH" janet-path]
+      [bootstrap-path source-dir]))
+  (def proc (os/spawn amalg-args :p {:out :pipe}))
+  (def [exit-code output] (ev/gather (os/proc-wait proc) (ev/read (proc :out) :all)))
+  (os/proc-close proc)
   (assert (zero? exit-code) "failed to generate amalgamation")
-  # Copy shell.c
+  (spit janet-c-path output)
   (def shell-src (string/join [source-dir "src" "mainclient" "shell.c"] util/sep))
   (def shell-dst (string/join [build-c-dir "shell.c"] util/sep))
   (util/copy-file shell-src shell-dst)
@@ -261,14 +271,13 @@
   (def link-cmd
     ["zig" "cc" "-target" zig-target
      ;cflags
-     "-Wl,--gc-sections"
      "-o" output
      janet-o-path
      shell-o-path
      ;(or lflags [])])
   (def exit-code (os/execute link-cmd :p))
   (assert (zero? exit-code) "failed to link")
-  # Strip symbols to reduce size if requested
+  # strip symbols to reduce size if requested
   (when small?
     (print "stripping symbols...")
     (def strip-cmd ["strip" output])
@@ -291,7 +300,7 @@
   (def cflags (get-compiler-flags source-dir small?))
   (def build-dir (get-build-dir target))
   (util/mkdir build-dir)
-  # Compile janet.c to janet.o (without shell.c - library doesn't need the REPL)
+  # compile janet.c to janet.o (without shell.c - library doesn't need the REPL)
   (print "compiling janet.c for static library...")
   (def janet-o-path (string/join [build-dir "janet.o"] util/sep))
   (def janet-c-path (string/join [build-c-dir "janet.c"] util/sep))
@@ -302,7 +311,7 @@
      "-o" janet-o-path])
   (def exit-code (os/execute janet-compile-cmd :p))
   (assert (zero? exit-code) "failed to compile janet.c for static library")
-  # Create static library using ar
+  # create static library using ar
   (print "creating static library...")
   (def libjanet-path (string/join [build-dir "libjanet.a"] util/sep))
   (def ar-cmd ["zig" "ar" "rcs" libjanet-path janet-o-path])
@@ -453,15 +462,13 @@
   (def link-cmd
     ["zig" "cc" "-target" zig-target
      ;cflags
-     "-Wl,--gc-sections"
      "-o" output-path
      embed-o-path
      libjanet-path
-     "-lm" "-lpthread"
      ;(or lflags [])])
   (def exit-code (os/execute link-cmd :p))
   (assert (zero? exit-code) "failed to link quickbin")
-  # Strip symbols to reduce size if requested
+  # strip symbols to reduce size if requested
   (when small?
     (print "stripping symbols...")
     (def strip-cmd ["strip" output-path])

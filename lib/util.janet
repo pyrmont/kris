@@ -44,6 +44,13 @@
   (def content (slurp src))
   (spit dest content))
 
+(defn devnull
+  ```
+  Open the equivalent of /dev/null
+  ```
+  []
+  (os/open (if (= :windows (os/which)) "NUL" "/dev/null") :rw))
+
 (defn mkdir
   ```
   Creates a directory recursively
@@ -60,7 +67,8 @@
   (var res false)
   (def cwd (os/cwd))
   (each part parts
-    (set res (os/mkdir part))
+    (unless (string/has-suffix? sep part)
+      (set res (os/mkdir part)))
     (os/cd part))
   (os/cd cwd)
   res)
@@ -90,5 +98,5 @@
   Checks if Zig is installed
   ```
   []
-  (with [devnull (file/open "/dev/null")]
-    (os/execute ["which" "zig"] :p {:err devnull :out devnull})))
+  (with [dn (devnull)]
+    (zero? (os/execute ["which" "zig"] :p {:err dn :out dn}))))

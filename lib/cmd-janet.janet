@@ -32,8 +32,6 @@
    :info {:about "Cross-compiles Janet for a target platform."}
    :help "Cross-compile Janet."})
 
-# All compilation logic moved to compile.janet
-
 (defn run
   [args]
   (def opts (args :opts))
