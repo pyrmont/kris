@@ -17,7 +17,7 @@
   (var attempts 0)
   (var success false)
   (while (and (not success) (< attempts 5))
-    (def [ok? err]
+    (def [ok? _]
       (protect
         (if is-dir?
           (os/rmdir path)

@@ -8,48 +8,48 @@
 (def output "hello-world")
 
 (deftest compile-quickbin-linux-arm64
-  (h/in-dir d
-    (def [exit-code out err]
+  (h/in-dir _dir
+    (def [exit-code out _]
       (h/shell-capture ["janet" cli-path "--cache" cache-dir "quickbin" "--target" "linux-arm64" input output]))
     (is (zero? exit-code))
     (is (string/has-suffix? (h/add-eol confirmation) out))
     (is (= :file (os/stat output :mode)))))
 
 (deftest compile-quickbin-linux-x64
-  (h/in-dir d
-    (def [exit-code out err]
+  (h/in-dir _dir
+    (def [exit-code out _]
       (h/shell-capture ["janet" cli-path "--cache" cache-dir "quickbin" "--target" "linux-x64" input output]))
     (is (zero? exit-code))
     (is (string/has-suffix? (h/add-eol confirmation) out))
     (is (= :file (os/stat output :mode)))))
 
 (deftest compile-quickbin-macos-arm64
-  (h/in-dir d
-    (def [exit-code out err]
+  (h/in-dir _dir
+    (def [exit-code out _]
       (h/shell-capture ["janet" cli-path "--cache" cache-dir "quickbin" "--target" "macos-arm64" input output]))
     (is (zero? exit-code))
     (is (string/has-suffix? (h/add-eol confirmation) out))
     (is (= :file (os/stat output :mode)))))
 
 (deftest compile-quickbin-macos-x64
-  (h/in-dir d
-    (def [exit-code out err]
+  (h/in-dir _dir
+    (def [exit-code out _]
       (h/shell-capture ["janet" cli-path "--cache" cache-dir "quickbin" "--target" "macos-x64" input output]))
     (is (zero? exit-code))
     (is (string/has-suffix? (h/add-eol confirmation) out))
     (is (= :file (os/stat output :mode)))))
 
 (deftest compile-quickbin-windows-arm64
-  (h/in-dir d
-    (def [exit-code out err]
+  (h/in-dir _dir
+    (def [exit-code out _]
       (h/shell-capture ["janet" cli-path "--cache" cache-dir "quickbin" "--target" "windows-arm64" input output]))
     (is (zero? exit-code))
     (is (string/has-suffix? (h/add-eol confirmation) out))
     (is (= :file (os/stat output :mode)))))
 
 (deftest compile-quickbin-windows-x64
-  (h/in-dir d
-    (def [exit-code out err]
+  (h/in-dir _dir
+    (def [exit-code out _]
       (h/shell-capture ["janet" cli-path "--cache" cache-dir "quickbin" "--target" "windows-x64" input output]))
     (is (zero? exit-code))
     (is (string/has-suffix? (h/add-eol confirmation) out))
